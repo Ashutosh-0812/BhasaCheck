@@ -1,0 +1,36 @@
+# Parquet data files
+*.parquet
+BhasaCheck-Backend/data/*.parquet
+
+# Node modules
+node_modules/
+**/node_modules/
+
+# Environment variables
+.env
+**/.env
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build outputs
+dist/
+build/
+*.local
+
+# Temporary files
+tmp/
+temp/
+*.tmp
