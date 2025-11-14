@@ -20,47 +20,61 @@ export default function RSMLEditor({
       textareaRef.current.value = initialText || "";
       outputRef.current.innerHTML = "";
       
-      // IMPORTANT: Remove ALL suggestion boxes from the document before creating new annotator
-      const allSuggestionBoxes = document.querySelectorAll('.rsml-suggestions, .tag-suggestions, [class*="suggestion"]');
-      allSuggestionBoxes.forEach(box => box.remove());
-      
       // Destroy previous annotator instance if exists
       if (annotatorRef.current) {
         annotatorRef.current = null;
       }
       
-      // Small delay to ensure DOM is clean
-      setTimeout(() => {
-        // Create new annotator instance
+      // Only remove suggestion boxes from OTHER segments/editors
+      const removeSuggestions = () => {
+        const allBoxes = document.querySelectorAll('.rsml-suggestions, .tag-suggestions, .language-suggestions, .entity-suggestions');
+        allBoxes.forEach(box => {
+          // Check if this box belongs to a different editor
+          const parent = box.closest('[data-editor-id]');
+          if (!parent || parent.dataset.editorId !== uniqueId.current) {
+            try {
+              box.remove();
+            } catch(e) {}
+          }
+        });
+      };
+      
+      removeSuggestions();
+      
+      // Create new annotator
+      const timeoutId = setTimeout(() => {
         annotatorRef.current = new RSMLAnnotator({
           textarea: textareaRef.current,
           output: outputRef.current,
         });
 
-        // Set initial text if provided
         if (initialText) {
           textareaRef.current.value = initialText;
           const event = new Event('input', { bubbles: true });
           textareaRef.current?.dispatchEvent(event);
         }
-      }, 50);
+      }, 100);
 
-      // Add event listener for text changes
       const handleInput = (e) => {
         onTextChange(e.target.value);
       };
       
       textareaRef.current.addEventListener('input', handleInput);
       
-      // Cleanup
       return () => {
+        clearTimeout(timeoutId);
+        
         if (textareaRef.current) {
           textareaRef.current.removeEventListener('input', handleInput);
         }
         
-        // Remove ALL suggestion boxes on cleanup
-        const suggestions = document.querySelectorAll('.rsml-suggestions, .tag-suggestions, [class*="suggestion"]');
-        suggestions.forEach(el => el.remove());
+        // Only remove suggestion boxes from this editor on cleanup
+        const myBoxes = containerRef.current?.querySelectorAll('.rsml-suggestions, .tag-suggestions, .language-suggestions, .entity-suggestions');
+        myBoxes?.forEach(box => {
+          try {
+            box.remove();
+          } catch(e) {}
+        });
         
         annotatorRef.current = null;
       };
