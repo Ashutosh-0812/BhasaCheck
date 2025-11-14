@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import RSMLEditor from "./RSMLEditor";
 import RSMLGuide from "./RSMLGuide";
 
-const API_URL = "http://localhost:4000/api";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
 
 export default function SegmentViewer({ segments, selectedParquet, selectedFile }) {
   const [audioUrls, setAudioUrls] = useState({});
