@@ -49,7 +49,7 @@ export const getSegments = async (req, res) => {
 };
 
 /**
- * Serve audio stream (WAV format - pre-converted during seeding)
+ * Serve audio stream (FLAC format - direct from DB)
  */
 export const getAudio = async (req, res) => {
   try {
@@ -64,26 +64,8 @@ export const getAudio = async (req, res) => {
     if (!seg) return res.status(404).send("Segment not found");
     if (!seg.audio_data) return res.status(404).send("Audio data not found");
 
-    // Decode base64 audio data (WAV format)
-    const audioBuffer = Buffer.from(seg.audio_data, "base64");
-    
-    console.log(`🎧 Serving WAV audio for segment ${sid}...`);
-    console.log(`📦 Buffer size: ${audioBuffer.length} bytes`);
-
-    if (audioBuffer.length < 100) {
-      return res.status(400).send("Invalid or empty audio data");
-    }
-
-    res.set({
-      "Content-Type": "audio/wav",
-      "Content-Length": audioBuffer.length,
-      "Cache-Control": "public, max-age=3600",
-      "Accept-Ranges": "bytes",
-      "Access-Control-Allow-Origin": "*",
-    });
-
-    res.send(audioBuffer);
-    console.log(`✅ WAV audio sent for segment ${sid}`);
+    // Send base64 audio data directly as JSON
+    res.json({ audio_data: seg.audio_data });
   } catch (err) {
     console.error("🚨 Error serving audio:", err);
     if (!res.headersSent)

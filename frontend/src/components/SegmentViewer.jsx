@@ -14,14 +14,25 @@ export default function SegmentViewer({ segments, selectedParquet, selectedFile 
   useEffect(() => {
     if (!segments || segments.length === 0) return;
 
-    // Instead of creating blob URLs, use direct API URLs
-    const urls = {};
-    segments.forEach((seg) => {
-      urls[seg.segment_id] = `${API_URL}/audio/${selectedParquet}/${selectedFile}/${seg.segment_id}`;
-    });
-    setAudioUrls(urls);
+    // Fetch audio data and create data URIs
+    const fetchAudioData = async () => {
+      const urls = {};
+      for (const seg of segments) {
+        try {
+          const response = await fetch(`${API_URL}/audio/${selectedParquet}/${selectedFile}/${seg.segment_id}`);
+          if (response.ok) {
+            const data = await response.json();
+            // Create data URI from base64
+            urls[seg.segment_id] = `data:audio/flac;base64,${data.audio_data}`;
+          }
+        } catch (err) {
+          console.error(`Error fetching audio for segment ${seg.segment_id}:`, err);
+        }
+      }
+      setAudioUrls(urls);
+    };
 
-    // No cleanup needed for direct URLs
+    fetchAudioData();
   }, [segments, selectedParquet, selectedFile]);
 
   // Handle text changes for segments
@@ -57,16 +68,22 @@ export default function SegmentViewer({ segments, selectedParquet, selectedFile 
             console.error(`Failed to fetch audio for segment ${seg.segment_id}`);
             continue;
           }
-          const arrayBuffer = await response.arrayBuffer();
+          const data = await response.json();
           
-        
+          // Decode base64 FLAC to ArrayBuffer
+          const binaryString = atob(data.audio_data);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          const arrayBuffer = bytes.buffer;
+          
           try {
             const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
             audioBuffers.push({ buffer: audioBuffer, segment: seg });
             totalLength += audioBuffer.length + silenceLength;
           } catch (decodeError) {
             console.error(`Failed to decode audio for segment ${seg.segment_id}:`, decodeError);
-         
             continue;
           }
         } catch (fetchError) {

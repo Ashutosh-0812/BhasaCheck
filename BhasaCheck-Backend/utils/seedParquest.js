@@ -78,15 +78,12 @@ async function seedParquet(parquetPath, parquetId, fileId) {
             for (const record of limitedData) {
               let audioBase64 = "";
               try {
-                // Column 0 contains audio data as bytes object
+                // Column 0 contains audio data as bytes object (FLAC)
                 if (record['0']?.bytes) {
-                  console.log(`🔄 Converting segment ${counter + 1} from FLAC to WAV...`);
-                  const wavBytes = await convertFlacToWav(record['0'].bytes);
-                  audioBase64 = wavBytes.toString("base64");
-                  console.log(`✅ Converted segment ${counter + 1} to WAV`);
+                  audioBase64 = Buffer.from(record['0'].bytes).toString("base64");
                 }
               } catch (err) {
-                console.warn(`⚠️ Failed to convert audio for segment ${counter + 1}:`, err.message);
+                console.warn(`⚠️ No audio data for segment ${counter + 1}`);
               }
 
               const segment = new Segment({
